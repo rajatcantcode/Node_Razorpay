@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <div class="flex items-center justify-center w-full h-screen bg-zinc-900 text-white">
+        <div class="flex flex-col items-center justify-center gap-4 p-4 border border-white">
+            <h1>Payment With RazorPay</h1>
+            <button id="rzp-button1" class="px-4 py-1 bg-green-500 border border-green-700 rounded">PAY</button>
+        </div>
+    </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.getElementById('rzp-button1').onclick = function (e) {
+            axios.post('/create/orderId')
+                .then(function (response) {
+                    var options = {
+                        "key": "rzp_test_UKUSUKK8MgrjkM", // Enter the Key ID generated from the Dashboard
+                        "amount": response.data.amount, // Amount in currency subunits. Default currency is INR.
+                        "currency": response.data.currency,
+                        "name": "RajatKiCompany",
+                        "description": "Test Transaction",
+                        "image": "https://i.pinimg.com/736x/a4/42/52/a442524e838cb8fdf60eff1ef2f1cbab.jpg",
+                        "order_id": response.data.id,
+                        "handler": function (response) {
+                            axios.post('/api/payment/verify', {
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                signature: response.razorpay_signature
+                            })
+                                .then(function (response) {
+                                    alert('Payment verified successfully');
+                                })
+                                .catch(function (error) {
+                                    console.error(error);
+                                });
+                        },
+                        "prefill": {
+                            "name": "Rajat Sharma",
+                            "email": "rajatcantcode@gmail.com",
+                            "contact": "9999999999"
+                        },
+                        "notes": {
+                            "address": "Razorpay Corporate Office"
+                        },
+                        "theme": {
+                            "color": "#de164b"
+                        }
+                    };
+                    var rzp1 = new Razorpay(options);
+                    rzp1.on('payment.failed', function (response) {
+                        alert('Payment Failed');
+                        alert('Error Code: ' + response.error.code);
+                        alert('Description: ' + response.error.description);
+                        alert('Source: ' + response.error.source);
+                        alert('Step: ' + response.error.step);
+                        alert('Reason: ' + response.error.reason);
+                        alert('Order ID: ' + response.error.metadata.order_id);
+                        alert('Payment ID: ' + response.error.metadata.payment_id);
+                    });
+                    rzp1.open();
+                    e.preventDefault();
+                })
+                .catch(function (error) {
+                    console.error(error);
+                });
+        };
+    </script>
+</body>
+
+</html>
